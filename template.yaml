@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  Project:
+    Type: String
+    Default: mcp
+  Environment:
+    Type: String
+    Default: dev
+  ServerName:
+    Type: String
+    Default: demo
+  ServerVersion:
+    Type: String
+    Default: "1.0.0"
+  Instructions:
+    Type: String
+    Default: "Use this MCP server to demonstrate MCP functionalities."
+  DomainName:
+    Type: String
+    Description: "The domain name of the endpoint"
+    Default: ""
+  AcmCertificateArn:
+    Type: String
+    Description: "The certificate arn for the domain name provided"
+    Default: ""
+  RequireAuth:
+    Type: String
+    Default: "FALSE"
+    AllowedValues:
+      - 'TRUE'
+      - 'FALSE'
+    Description: "Whether to require authentication for the API"
+
+Conditions:
+  IsDomainProvided: !Not [!Equals [!Ref DomainName, ""]]
+
+Globals:
+  Api:
+    TracingEnabled: true
+  Function:
+    Tracing: Active
+    Runtime: nodejs22.x
+    CodeUri: src/
+    Tags:
+      Project: !Ref Project
+      Environment: !Ref Environment
+      ServiceName: MCP
+
+Resources:
+  RestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub "${Project}-${Environment}-mcp"
+      StageName: !Ref Environment
+      Domain: !If
+        - IsDomainProvided
+        - DomainName: !Ref DomainName
+          CertificateArn: !Ref AcmCertificateArn
+          EndpointConfiguration: REGIONAL
+        - !Ref AWS::NoValue
+      DisableExecuteApiEndpoint: !If [IsDomainProvided, true, false]
+      Tags:
+        Project: !Ref Project
+        Environment: !Ref Environment
+        ServiceName: MCP
+
+  McpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Project}-${Environment}-mcp"
+      Handler: index.handler
+      MemorySize: 512
+      Timeout: 900
+      Environment:
+        Variables:
+          TOOLS_SSM_PREFIX: !Sub "/${Project}-${Environment}/tools/"
+          RESOURCES_SSM_PREFIX: !Sub "/${Project}-${Environment}/resources/"
+          PROMPT_SSM_PREFIX: !Sub "/${Project}-${Environment}/prompt/"
+          TOOL_LAMBDA_PREFIX: !Sub "${Project}-${Environment}-tools-"
+          SERVER_NAME: !Ref ServerName
+          SERVER_VERSION: !Ref ServerVersion
+          INSTRUCTIONS: !Ref Instructions
+          REQUIRE_AUTH: !Ref RequireAuth
+      Policies:
+        - Statement:
+          - Effect: "Allow"
+            Action: "ssm:GetParametersByPath"
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Project}-${Environment}/tools/"
+          - Effect: "Allow"
+            Action: "lambda:InvokeFunction"
+            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Project}-${Environment}-tools-*"
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /mcp
+            Method: ANY
+            RestApiId: !Ref RestApi
+
+Outputs:
+  ServerEndpoint:
+    Description: "MCP Server Endpoint"
+    Value: !If
+      - IsDomainProvided
+      - !Sub "https://${DomainName}/mcp"
+      - !Sub "https://${XyRetailApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/mcp"

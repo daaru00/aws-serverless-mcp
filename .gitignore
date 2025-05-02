@@ -1,0 +1,7 @@
+.vscode
+.idea
+.aws-sam
+samconfig.toml
+node_modules
+env-vars.json
+test-results

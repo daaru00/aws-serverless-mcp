@@ -1,0 +1,102 @@
+Parameters:
+  Project:
+    Type: String
+    Default: mcp
+  Environment:
+    Type: String
+    Default: dev
+
+Globals:
+  Function:
+    Tracing: Active
+    Runtime: nodejs22.x
+    Tags:
+      Project: !Ref Project
+      Environment: !Ref Environment
+      ServiceName: MCP
+
+Resources:
+  ##
+  # Resources
+  ##
+
+  ExampleResourceParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${Environment}-${AppName}/resources/example"
+      Type: String
+      Value: !Sub |
+        {
+          "name": "example",
+          "content": "Just an example resource"
+        }
+
+  ##
+  # Prompt
+  ##
+
+  EchoPromptParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${Environment}-${AppName}/prompts/echo"
+      Type: String
+      Value: !Sub |
+        {
+          "name": "echo",
+          "description": "Execute the example tool",
+          "inputSchema": {
+            "json": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": ["message"]
+            }
+          },
+          "content": "Execute the tool 'echo' with the message '{{input.message}}'"
+        }
+
+  ##
+  # Tools
+  ##
+
+  EchoToolFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Environment}-${AppName}-tools-echo"
+      Handler: index.handler
+      InlineCode: !Sub |
+        exports.handler = async ({ toolUseId, name, input }, context) => {
+          return {
+            name,
+            toolUseId,
+            status: 'success',
+            content: [{
+              text: input.message
+            }]
+          }
+        }
+
+  EchoToolParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${Environment}-${AppName}/tools/echo"
+      Type: String
+      Value: !Sub |
+        {
+          "name": "echo",
+          "description": "Print the message provided in input",
+          "inputSchema": {
+            "json": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": ["message"]
+            }
+          }
+        }
