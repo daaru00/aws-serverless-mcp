@@ -51,6 +51,26 @@ Configure the inspector with:
 
 Connect to the MCP server with "Connect" button.
 
+### Claude Desktop
+
+Use [mcp-remote](https://www.npmjs.com/package/mcp-remote) to proxy HTTP to STDIO:
+```json
+{
+  "mcpServers": {
+    "example": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://xxxxxxxxxx.execute-api.eu-west-1.amazonaws.com/dev/mcp",
+        "--transport",
+        "http-only"
+      ]
+    }
+  }
+}
+```
+
 ## Deploy
 
 Requirements:
@@ -72,7 +92,7 @@ sam deploy --profile <your AWS profile> --guided
 Once the solution is installed, you can extend the MCP server with resources, prompts or tools using SSM parameters and Lambda functions.
 The SSM parameters must begin with the prefix `/<project name>/<environment name>/`, for example `/mcp/dev/tools/echo`.
 
-As an example of integration you can take inspiration from the template: [template.integration.yaml](./template.integration.yaml)
+As an example of integration you can take inspiration from the template: [template.integration.yaml](./template.integration.yaml).
 
 ### Resources
 
