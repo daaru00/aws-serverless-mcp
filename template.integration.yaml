@@ -1,3 +1,8 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform:
+  - AWS::LanguageExtensions
+  - AWS::Serverless-2016-10-31
+
 Parameters:
   Project:
     Type: String
@@ -23,11 +28,12 @@ Resources:
   ExampleResourceParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${Environment}-${AppName}/resources/example"
+      Name: !Sub "/${Project}-${Environment}/resources/example"
       Type: String
-      Value: !Sub |
+      Value: |
         {
           "name": "example",
+          "uri": "config://example",
           "content": "Just an example resource"
         }
 
@@ -38,9 +44,9 @@ Resources:
   EchoPromptParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${Environment}-${AppName}/prompts/echo"
+      Name: !Sub "/${Project}-${Environment}/prompts/echo"
       Type: String
-      Value: !Sub |
+      Value: |
         {
           "name": "echo",
           "description": "Execute the example tool",
@@ -55,7 +61,7 @@ Resources:
               "required": ["message"]
             }
           },
-          "content": "Execute the tool 'echo' with the message '{{input.message}}'"
+          "content": "Execute the tool 'echo' with the message '#{message}'"
         }
 
   ##
@@ -65,9 +71,9 @@ Resources:
   EchoToolFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "${Environment}-${AppName}-tools-echo"
+      FunctionName: !Sub "${Project}-${Environment}-tools-echo"
       Handler: index.handler
-      InlineCode: !Sub |
+      InlineCode: |
         exports.handler = async ({ toolUseId, name, input }, context) => {
           return {
             name,
@@ -82,9 +88,9 @@ Resources:
   EchoToolParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${Environment}-${AppName}/tools/echo"
+      Name: !Sub "/${Project}-${Environment}/tools/echo"
       Type: String
-      Value: !Sub |
+      Value: |
         {
           "name": "echo",
           "description": "Print the message provided in input",

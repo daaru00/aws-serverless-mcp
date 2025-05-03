@@ -17,9 +17,13 @@ export async function listResources(parameters) {
 
 		try {
 			const resourceSpec = JSON.parse(parameter.Value)
+			if (!resourceSpec.name || !resourceSpec.uri || !resourceSpec.content) {
+				throw new Error('Missing name, uri or content')
+			}
+
 			resources.push(resourceSpec)	
 		} catch (error) {
-			console.error('Error parsing tool', parameter.Name, error)
+			console.error('Error parsing resource', parameter.Name, error)
 		}
 	}
 

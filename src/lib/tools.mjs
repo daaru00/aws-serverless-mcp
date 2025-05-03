@@ -1,6 +1,6 @@
 import AWSXRay from 'aws-xray-sdk'
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda'
-const lambda = process.env.AWS_SAM_LOCAL ? new LambdaClient() : AWSXRay.captureAWSv3Client(new LambdaClient())
+const lambda = process.env.AWS_LAMBDA_FUNCTION_NAME ? AWSXRay.captureAWSv3Client(new LambdaClient()) : new LambdaClient()
 
 const TOOLS_SSM_PREFIX = process.env.TOOLS_SSM_PREFIX
 const TOOL_LAMBDA_PREFIX = process.env.TOOL_LAMBDA_PREFIX
@@ -22,6 +22,10 @@ export async function listTools(parameters) {
 
 		try {
 			const toolSpec = JSON.parse(parameter.Value)
+			if (!toolSpec.name || !toolSpec.inputSchema || !toolSpec.inputSchema.json) {
+				throw new Error('Missing name or inputSchema')
+			}
+
 			tools.push(toolSpec)	
 		} catch (error) {
 			console.error('Error parsing tool', parameter.Name, error)

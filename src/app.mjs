@@ -1,8 +1,10 @@
 import express from 'express'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
+import { mcpAuthRouter } from '@modelcontextprotocol/sdk/server/auth/router.js'
+import { ProxyOAuthServerProvider } from '@modelcontextprotocol/sdk/server/auth/providers/proxyProvider.js'
 import getServer from './mcp.mjs'
 
-const REQUIRE_AUTH = process.env.REQUIRE_AUTH === 'TRUE'
+const AUTHENTICATION_TYPE = process.env.AUTHENTICATION_TYPE
 
 // Initialize Express app
 const app = express()
@@ -17,9 +19,13 @@ app.use((req, res, next) => {
 // Validate authorization header
 const auth = async (req, res, next) => {
 	res.locals.query = req.query
-	res.locals.token = (req.headers['authorization'] || req.headers['Authorization'] || '').replace('Bearer ').trim()
 
-	if (REQUIRE_AUTH && !res.locals.token) {
+	if (AUTHENTICATION_TYPE === 'DISABLED' || AUTHENTICATION_TYPE === 'OAUTH') {
+		return next()
+	}
+
+	res.locals.token = (req.headers['authorization'] || req.headers['Authorization'] || '').replace('Bearer ').trim()
+	if (AUTHENTICATION_TYPE === 'TOKEN_REQUIRED' && !res.locals.token) {
 		console.error('Missing or invalid authorization token')
 		return res.status(401).json({
 			jsonrpc: '2.0',
@@ -32,6 +38,34 @@ const auth = async (req, res, next) => {
 	}
   
 	next()
+}
+
+if (AUTHENTICATION_TYPE === 'OAUTH') {
+	const proxyProvider = new ProxyOAuthServerProvider({
+		endpoints: {
+			authorizationUrl: process.env.OAUTH_AUTHORIZATION_URL,
+			tokenUrl: process.env.OAUTH_TOKEN_URL,
+			revocationUrl: process.env.OAUTH_REVOCATION_URL,
+		},
+		verifyAccessToken: async (token) => {
+			return {
+				token,
+				clientId: '123',
+				scopes: ['openid', 'email', 'profile'],
+			}
+		},
+		getClient: async (client_id) => {
+			return {
+				client_id,
+				redirect_uris: (process.env.OAUTH_REDIRECT_URIS || '').split(',').map((uri) => uri.trim()),
+			}
+		}
+	})
+
+	app.use(mcpAuthRouter({
+		provider: proxyProvider,
+		issuerUrl: new URL(process.env.OAUTH_ISSUER_URL),
+	}))
 }
 
 app.post('/mcp', auth, async (req, res) => {

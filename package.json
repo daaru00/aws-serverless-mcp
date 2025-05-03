@@ -4,12 +4,24 @@
 	"private": true,
 	"scripts": {
 		"lint": "eslint .",
-		"lint:fix": "eslint --fix ."
+		"lint:fix": "eslint --fix .",
+		"dev": "node server.mjs",
+		"inspector": "mcp-inspector"
 	},
 	"devDependencies": {
+		"@aws-sdk/client-dynamodb": "^3.797.0",
 		"@aws-sdk/client-lambda": "^3.799.0",
 		"@aws-sdk/client-ssm": "^3.787.0",
+		"@aws-sdk/lib-dynamodb": "^3.797.0",
+		"@codegenie/serverless-express": "^4.16.0",
+		"@modelcontextprotocol/inspector": "^0.11.0",
+		"@modelcontextprotocol/sdk": "^1.10.2",
 		"aws-xray-sdk": "^3.10.3",
-		"eslint": "^9.14.0"
+		"dotenv": "^16.5.0",
+		"eslint": "^9.14.0",
+		"express": "^5.1.0",
+		"json-schema-to-zod": "^2.6.1",
+		"pug": "^3.0.3",
+		"zod-from-json-schema": "^0.0.5"
 	}
 }

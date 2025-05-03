@@ -1,5 +1,7 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
+AWSTemplateFormatVersion: "2010-09-09"
+Transform:
+  - AWS::LanguageExtensions
+  - AWS::Serverless-2016-10-31
 
 Parameters:
   Project:
@@ -25,13 +27,35 @@ Parameters:
     Type: String
     Description: "The certificate arn for the domain name provided"
     Default: ""
-  RequireAuth:
+  AuthenticationType:
     Type: String
-    Default: "FALSE"
+    Description: "Authentication type for the MCP server"
+    Default: "DISABLED"
     AllowedValues:
-      - 'TRUE'
-      - 'FALSE'
-    Description: "Whether to require authentication for the API"
+      - 'DISABLED'
+      - 'TOKEN_OPTIONAL'
+      - 'TOKEN_REQUIRED'
+      - 'OAUTH'
+  OAuthIssuerUrl:
+    Type: String
+    Description: "The issuer URL for OAuth authentication"
+    Default: ""
+  OAuthAuthorizationUrl:
+    Type: String
+    Description: "The authorization URL for OAuth authentication"
+    Default: ""
+  OAuthTokenUrl:
+    Type: String
+    Description: "The token URL for OAuth authentication"
+    Default: ""
+  OAuthRevocationUrl:
+    Type: String
+    Description: "The revocation URL for OAuth authentication"
+    Default: ""
+  OAuthRedirectUris:
+    Type: CommaDelimitedList
+    Description: "The redirect URIs for OAuth authentication"
+    Default: ""
 
 Conditions:
   IsDomainProvided: !Not [!Equals [!Ref DomainName, ""]]
@@ -78,17 +102,22 @@ Resources:
           SSM_PREFIX: !Sub "/${Project}-${Environment}/"
           TOOLS_SSM_PREFIX: !Sub "/${Project}-${Environment}/tools/"
           RESOURCES_SSM_PREFIX: !Sub "/${Project}-${Environment}/resources/"
-          PROMPTS_SSM_PREFIX: !Sub "/${Project}-${Environment}/prompt/"
+          PROMPTS_SSM_PREFIX: !Sub "/${Project}-${Environment}/prompts/"
           TOOL_LAMBDA_PREFIX: !Sub "${Project}-${Environment}-tools-"
           SERVER_NAME: !Ref ServerName
           SERVER_VERSION: !Ref ServerVersion
           INSTRUCTIONS: !Ref Instructions
-          REQUIRE_AUTH: !Ref RequireAuth
+          AUTHENTICATION_TYPE: !Ref AuthenticationType
+          OAUTH_ISSUER_URL: !Ref OAuthIssuerUrl
+          OAUTH_AUTHORIZATION_URL: !Ref OAuthAuthorizationUrl
+          OAUTH_TOKEN_URL: !Ref OAuthTokenUrl
+          OAUTH_REVOCATION_URL: !Ref OAuthRevocationUrl
+          OAUTH_REDIRECT_URIS: !Join [',', !Ref OAuthRedirectUris]
       Policies:
         - Statement:
           - Effect: "Allow"
             Action: "ssm:GetParametersByPath"
-            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Project}-${Environment}/tools/"
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Project}-${Environment}/"
           - Effect: "Allow"
             Action: "lambda:InvokeFunction"
             Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Project}-${Environment}-tools-*"
@@ -106,4 +135,4 @@ Outputs:
     Value: !If
       - IsDomainProvided
       - !Sub "https://${DomainName}/mcp"
-      - !Sub "https://${XyRetailApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/mcp"
+      - !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/mcp"

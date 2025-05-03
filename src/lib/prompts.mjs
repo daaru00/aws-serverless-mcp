@@ -1,4 +1,4 @@
-import Handlebars from 'handlebars'
+import pug from 'pug'
 
 const PROMPTS_SSM_PREFIX = process.env.PROMPTS_SSM_PREFIX
 
@@ -19,9 +19,13 @@ export async function listPrompts(parameters) {
 
 		try {
 			const promptSpec = JSON.parse(parameter.Value)
+			if (!promptSpec.name || !promptSpec.content) {
+				throw new Error('Missing name or content')
+			}
+
 			prompts.push(promptSpec)	
 		} catch (error) {
-			console.error('Error parsing tool', parameter.Name, error)
+			console.error('Error parsing prompt', parameter.Name, error)
 		}
 	}
 
@@ -33,10 +37,12 @@ export async function listPrompts(parameters) {
 	}))
 }
 
-export async function buildPrompt(content, input, context) {
-	const template = Handlebars.compile(content)
-	return template({
-		input,
-		context,
-	})
+/**
+ * @param {string} content 
+ * @param {object} input 
+ * @returns {string}
+ */
+export function buildPrompt(content, input) {
+	const template = pug.compile(content)
+	return template(input)
 }

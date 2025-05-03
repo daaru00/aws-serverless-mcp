@@ -11,8 +11,8 @@ import { jsonSchemaObjectToZodRawShape } from 'zod-from-json-schema'
  */
 export default async function (context = {}) {
 	const server = new McpServer({
-		name: process.env.SERVER_NAME,
-		version: process.env.SERVER_VERSION,
+		name: process.env.SERVER_NAME || 'mcp',
+		version: process.env.SERVER_VERSION || '0.1.0',
 	}, {
 		capabilities: {
 			tools: {}
@@ -47,7 +47,7 @@ export default async function (context = {}) {
 					role: 'user',
 					content: {
 						type: 'text',
-						text: await buildPrompt(prompt.content, input, context)
+						text: buildPrompt(prompt.content, input)
 					}
 				}]
 			})
