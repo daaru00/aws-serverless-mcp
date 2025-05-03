@@ -3,19 +3,6 @@ Transform:
   - AWS::LanguageExtensions
   - AWS::Serverless-2016-10-31
 
-Metadata:
-  AWS::ServerlessRepo::Application:
-    Name: serverless-mcp
-    Description: Serverless MCP server implementation
-    Author: Fabio Gollinucci
-    SpdxLicenseId: MIT
-    LicenseUrl: LICENSE.txt
-    ReadmeUrl: README.md
-    Labels: ['mcp']
-    HomePageUrl: https://github.com/daaru00/aws-serverless-mcp
-    SemanticVersion: 1.0.0
-    SourceCodeUrl: https://github.com/daaru00/aws-serverless-mcp
-
 Parameters:
   Project:
     Type: String
