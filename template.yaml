@@ -75,9 +75,10 @@ Resources:
       Timeout: 900
       Environment:
         Variables:
+          SSM_PREFIX: !Sub "/${Project}-${Environment}/"
           TOOLS_SSM_PREFIX: !Sub "/${Project}-${Environment}/tools/"
           RESOURCES_SSM_PREFIX: !Sub "/${Project}-${Environment}/resources/"
-          PROMPT_SSM_PREFIX: !Sub "/${Project}-${Environment}/prompt/"
+          PROMPTS_SSM_PREFIX: !Sub "/${Project}-${Environment}/prompt/"
           TOOL_LAMBDA_PREFIX: !Sub "${Project}-${Environment}-tools-"
           SERVER_NAME: !Ref ServerName
           SERVER_VERSION: !Ref ServerVersion

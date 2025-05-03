@@ -1,42 +1,31 @@
 import AWSXRay from 'aws-xray-sdk'
-import { SSMClient, GetParametersByPathCommand } from '@aws-sdk/client-ssm'
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda'
-const ssm = process.env.AWS_SAM_LOCAL ? new SSMClient() : AWSXRay.captureAWSv3Client(new SSMClient())
 const lambda = process.env.AWS_SAM_LOCAL ? new LambdaClient() : AWSXRay.captureAWSv3Client(new LambdaClient())
 
 const TOOLS_SSM_PREFIX = process.env.TOOLS_SSM_PREFIX
 const TOOL_LAMBDA_PREFIX = process.env.TOOL_LAMBDA_PREFIX
 
 /**
- * @param {string|undefined} previousToken
+ * @param {import('@aws-sdk/client-ssm').Parameter[]} parameters
  * @returns {Promise<object[]>}
  */
-export async function listTools(previousToken) {
-	/** @type {object[]} */
+export async function listTools(parameters) {
 	let tools = []
-    
 	if (!TOOLS_SSM_PREFIX) {
 		return tools
 	}
 
-	const { Parameters: parameters, NextToken: nextToken } = await ssm.send(new GetParametersByPathCommand({
-		Path: TOOLS_SSM_PREFIX,
-		Recursive: true,
-		NextToken: previousToken,
-	}))
-
 	for (const parameter of parameters) {
+		if (!parameter.Name.startsWith(TOOLS_SSM_PREFIX)) {
+			continue
+		}
+
 		try {
 			const toolSpec = JSON.parse(parameter.Value)
 			tools.push(toolSpec)	
 		} catch (error) {
 			console.error('Error parsing tool', parameter.Name, error)
 		}
-	}
-
-	if (nextToken) {
-		const nextTools = await listTools(nextToken)
-		tools = tools.concat(nextTools)
 	}
 
 	return tools.map((toolSpec) => ({

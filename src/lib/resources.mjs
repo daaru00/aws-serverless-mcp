@@ -1,39 +1,26 @@
-import AWSXRay from 'aws-xray-sdk'
-import { SSMClient, GetParametersByPathCommand } from '@aws-sdk/client-ssm'
-const ssm = process.env.AWS_SAM_LOCAL ? new SSMClient() : AWSXRay.captureAWSv3Client(new SSMClient())
-
 const RESOURCES_SSM_PREFIX = process.env.RESOURCES_SSM_PREFIX
 
 /**
- * @param {string|undefined} previousToken
+ * @param {import('@aws-sdk/client-ssm').Parameter[]} parameters
  * @returns {Promise<object[]>}
  */
-export async function listResources(previousToken) {
-	/** @type {object[]} */
+export async function listResources(parameters) {
 	let resources = []
-    
 	if (!RESOURCES_SSM_PREFIX) {
 		return resources
 	}
 
-	const { Parameters: parameters, NextToken: nextToken } = await ssm.send(new GetParametersByPathCommand({
-		Path: RESOURCES_SSM_PREFIX,
-		Recursive: true,
-		NextToken: previousToken,
-	}))
-
 	for (const parameter of parameters) {
+		if (!parameter.Name.startsWith(RESOURCES_SSM_PREFIX)) {
+			continue
+		}
+
 		try {
 			const resourceSpec = JSON.parse(parameter.Value)
 			resources.push(resourceSpec)	
 		} catch (error) {
 			console.error('Error parsing tool', parameter.Name, error)
 		}
-	}
-
-	if (nextToken) {
-		const nextTools = await listResources(nextToken)
-		resources = resources.concat(nextTools)
 	}
 
 	return resources.map((resourceSpec) => ({

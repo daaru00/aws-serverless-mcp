@@ -1,40 +1,28 @@
 import Handlebars from 'handlebars'
-import AWSXRay from 'aws-xray-sdk'
-import { SSMClient, GetParametersByPathCommand } from '@aws-sdk/client-ssm'
-const ssm = process.env.AWS_SAM_LOCAL ? new SSMClient() : AWSXRay.captureAWSv3Client(new SSMClient())
 
-const PROMPT_SSM_PREFIX = process.env.PROMPT_SSM_PREFIX
+const PROMPTS_SSM_PREFIX = process.env.PROMPTS_SSM_PREFIX
 
 /**
- * @param {string|undefined} previousToken
+ * @param {import('@aws-sdk/client-ssm').Parameter[]} parameters
  * @returns {Promise<object[]>}
  */
-export async function listPrompts(previousToken) {
-	/** @type {object[]} */
+export async function listPrompts(parameters) {
 	let prompts = []
-    
-	if (!PROMPT_SSM_PREFIX) {
+	if (!PROMPTS_SSM_PREFIX) {
 		return prompts
 	}
 
-	const { Parameters: parameters, NextToken: nextToken } = await ssm.send(new GetParametersByPathCommand({
-		Path: PROMPT_SSM_PREFIX,
-		Recursive: true,
-		NextToken: previousToken,
-	}))
-
 	for (const parameter of parameters) {
+		if (!parameter.Name.startsWith(PROMPTS_SSM_PREFIX)) {
+			continue
+		}
+
 		try {
 			const promptSpec = JSON.parse(parameter.Value)
 			prompts.push(promptSpec)	
 		} catch (error) {
 			console.error('Error parsing tool', parameter.Name, error)
 		}
-	}
-
-	if (nextToken) {
-		const nextTools = await listPrompts(nextToken)
-		prompts = prompts.concat(nextTools)
 	}
 
 	return prompts.map((promptSpec) => ({

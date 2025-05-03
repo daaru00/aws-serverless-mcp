@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { listParameters } from './lib/ssm.mjs'
 import { listResources } from './lib/resources.mjs'
 import { listPrompts, buildPrompt } from './lib/prompts.mjs'
 import { listTools, invokeTool } from './lib/tools.mjs'
@@ -19,7 +20,9 @@ export default async function (context = {}) {
 		instructions: process.env.INSTRUCTIONS,
 	})
 
-	const resources = await listResources()
+	const parameters = await listParameters()
+
+	const resources = await listResources(parameters)
 	for (const resource of resources) {
 		server.resource(
 			resource.name,
@@ -33,7 +36,7 @@ export default async function (context = {}) {
 		)
 	}
   
-	const prompts = await listPrompts()
+	const prompts = await listPrompts(parameters)
 	for (const prompt of prompts) {
 		server.prompt(
 			prompt.name,
@@ -51,16 +54,13 @@ export default async function (context = {}) {
 		)
 	}
 
-	const tools = await listTools()
+	const tools = await listTools(parameters)
 	for (const tool of tools) {
 		server.tool(
 			tool.name,
 			tool.description,
 			tool.inputSchema ? jsonSchemaObjectToZodRawShape(tool.inputSchema) : {},
-			async (input) => {
-				console.log(`Tool ${tool.name} called with input: `, JSON.stringify(input))
-				return await invokeTool(tool.name, input, context)
-			}
+			async (input) => await invokeTool(tool.name, input, context)
 		)
 	}
 
