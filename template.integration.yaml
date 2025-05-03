@@ -28,7 +28,7 @@ Resources:
   ExampleResourceParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${Project}-${Environment}/resources/example"
+      Name: !Sub "/${Project}/${Environment}/resources/example"
       Type: String
       Value: |
         {
@@ -44,7 +44,7 @@ Resources:
   EchoPromptParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${Project}-${Environment}/prompts/echo"
+      Name: !Sub "/${Project}/${Environment}/prompts/echo"
       Type: String
       Value: |
         {
@@ -88,7 +88,7 @@ Resources:
   EchoToolParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${Project}-${Environment}/tools/echo"
+      Name: !Sub "/${Project}/${Environment}/tools/echo"
       Type: String
       Value: |
         {

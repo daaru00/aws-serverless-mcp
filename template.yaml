@@ -3,6 +3,19 @@ Transform:
   - AWS::LanguageExtensions
   - AWS::Serverless-2016-10-31
 
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: serverless-mcp
+    Description: Serverless MCP server implementation
+    Author: Fabio Gollinucci
+    SpdxLicenseId: MIT
+    LicenseUrl: LICENSE.txt
+    ReadmeUrl: README.md
+    Labels: ['mcp']
+    HomePageUrl: https://github.com/daaru00/aws-serverless-mcp
+    SemanticVersion: 1.0.0
+    SourceCodeUrl: https://github.com/daaru00/aws-serverless-mcp
+
 Parameters:
   Project:
     Type: String
@@ -99,10 +112,10 @@ Resources:
       Timeout: 900
       Environment:
         Variables:
-          SSM_PREFIX: !Sub "/${Project}-${Environment}/"
-          TOOLS_SSM_PREFIX: !Sub "/${Project}-${Environment}/tools/"
-          RESOURCES_SSM_PREFIX: !Sub "/${Project}-${Environment}/resources/"
-          PROMPTS_SSM_PREFIX: !Sub "/${Project}-${Environment}/prompts/"
+          SSM_PREFIX: !Sub "/${Project}/${Environment}/"
+          TOOLS_SSM_PREFIX: !Sub "/${Project}/${Environment}/tools/"
+          RESOURCES_SSM_PREFIX: !Sub "/${Project}/${Environment}/resources/"
+          PROMPTS_SSM_PREFIX: !Sub "/${Project}/${Environment}/prompts/"
           TOOL_LAMBDA_PREFIX: !Sub "${Project}-${Environment}-tools-"
           SERVER_NAME: !Ref ServerName
           SERVER_VERSION: !Ref ServerVersion
@@ -117,7 +130,7 @@ Resources:
         - Statement:
           - Effect: "Allow"
             Action: "ssm:GetParametersByPath"
-            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Project}-${Environment}/"
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Project}/${Environment}/"
           - Effect: "Allow"
             Action: "lambda:InvokeFunction"
             Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Project}-${Environment}-tools-*"
