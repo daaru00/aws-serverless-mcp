@@ -75,6 +75,7 @@ Resources:
       Handler: index.handler
       InlineCode: |
         exports.handler = async ({ toolUseId, name, input }, context) => {
+          console.log(JSON.stringify({ input, context }, null, 2))
           return {
             name,
             toolUseId,

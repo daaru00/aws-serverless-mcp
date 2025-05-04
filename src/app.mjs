@@ -4,7 +4,7 @@ import { mcpAuthRouter } from '@modelcontextprotocol/sdk/server/auth/router.js'
 import { ProxyOAuthServerProvider } from '@modelcontextprotocol/sdk/server/auth/providers/proxyProvider.js'
 import getServer from './mcp.mjs'
 
-const AUTHENTICATION_TYPE = process.env.AUTHENTICATION_TYPE
+const AUTHENTICATION_TYPE = process.env.AUTHENTICATION_TYPE || 'DISABLED'
 
 // Initialize Express app
 const app = express()
@@ -18,29 +18,41 @@ app.use((req, res, next) => {
 
 // Validate authorization header
 const auth = async (req, res, next) => {
-	res.locals.query = req.query
+	res.locals.query = req.query || {}
+	res.locals.userAgent = (req.headers['user-agent'] || req.headers['User-Agent'] || '')
 
-	if (AUTHENTICATION_TYPE === 'DISABLED' || AUTHENTICATION_TYPE === 'OAUTH') {
+	if (AUTHENTICATION_TYPE === 'DISABLED') {
 		return next()
 	}
 
 	res.locals.token = (req.headers['authorization'] || req.headers['Authorization'] || '').replace('Bearer ').trim()
 	if (AUTHENTICATION_TYPE === 'TOKEN_REQUIRED' && !res.locals.token) {
 		console.error('Missing or invalid authorization token')
-		return res.status(401).json({
+		return res.writeHead(403).end(JSON.stringify({
+			jsonrpc: '2.0',
+			error: {
+				code: -32600,
+				message: 'Forbidden',
+			},
+			id: null,
+		}))
+	} else if (AUTHENTICATION_TYPE === 'OAUTH' && !res.locals.token) {
+		console.error('Missing or invalid authorization token, requesting login..')
+		return res.writeHead(401).end(JSON.stringify({
 			jsonrpc: '2.0',
 			error: {
 				code: -32600,
 				message: 'Unauthorized',
 			},
 			id: null,
-		})
+		}))
 	}
   
 	next()
 }
 
 if (AUTHENTICATION_TYPE === 'OAUTH') {
+	console.log('Initializing OAuth2 authentication (WIP)')
 	const proxyProvider = new ProxyOAuthServerProvider({
 		endpoints: {
 			authorizationUrl: process.env.OAUTH_AUTHORIZATION_URL,
@@ -48,6 +60,7 @@ if (AUTHENTICATION_TYPE === 'OAUTH') {
 			revocationUrl: process.env.OAUTH_REVOCATION_URL,
 		},
 		verifyAccessToken: async (token) => {
+			console.log('Verifying access token:', token)
 			return {
 				token,
 				clientId: '123',
@@ -55,6 +68,7 @@ if (AUTHENTICATION_TYPE === 'OAUTH') {
 			}
 		},
 		getClient: async (client_id) => {
+			console.log('Getting client:', client_id)
 			return {
 				client_id,
 				redirect_uris: (process.env.OAUTH_REDIRECT_URIS || '').split(',').map((uri) => uri.trim()),
@@ -72,7 +86,7 @@ app.post('/mcp', auth, async (req, res) => {
 	console.log('Received POST MCP request')
 
 	try {
-		const server = await getServer(res.locals.shop)
+		const server = await getServer(res.locals)
 		const transport = new StreamableHTTPServerTransport({
 			sessionIdGenerator: undefined,
 			enableJsonResponse: true
