@@ -6,9 +6,9 @@
 		"@codegenie/serverless-express": "^4.16.0",
 		"@modelcontextprotocol/sdk": "^1.10.2",
 		"aws-xray-sdk": "^3.10.3",
+		"ejs": "^3.1.10",
 		"express": "^5.1.0",
 		"json-schema-to-zod": "^2.6.1",
-		"pug": "^3.0.3",
 		"zod-from-json-schema": "^0.0.5"
 	}
 }

@@ -1,4 +1,4 @@
-import pug from 'pug'
+import ejs from 'ejs'
 
 const PROMPTS_SSM_PREFIX = process.env.PROMPTS_SSM_PREFIX
 
@@ -43,6 +43,5 @@ export async function listPrompts(parameters) {
  * @returns {string}
  */
 export function buildPrompt(content, input) {
-	const template = pug.compile(content)
-	return template(input)
+	return ejs.render(content, input)
 }

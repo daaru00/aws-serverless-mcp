@@ -1,6 +1,60 @@
-# AWS Serverless MCP
+# Serverless MCP Framework
+
+![CloudFormation](https://img.shields.io/badge/-CloudFormation-%23FF4F8B)
+![Lambda](https://img.shields.io/badge/-Lambda-%23FF9900)
+![API Gateway](https://img.shields.io/badge/-API%20Gateway-%23A166FF)
 
 MCP Server implementation with AWS Serverless services.
+
+## Created resources
+
+A set of Lambda function connected to EventBridge rules that handle start, stop and task start. Create StepFunction state machine to wait until a specific date and send events.
+
+![Infrastructure Schema](./doc/schema.png)
+
+## Installation
+
+Using the [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html):
+```bash
+sam build
+sam deploy --guided
+```
+
+## Parameters
+
+This application need some parameters when you deploy it:
+
+- **EventBusName**: The event bus name to connect the integration to
+
+- **Project**: Project identifier
+
+- **Environment**: Environment identifier
+
+- **ServerName**: The MCP server name
+
+- **ServerVersion**: The MCP server version
+
+- **Instructions**: The MCP server instructions
+
+- **DomainName**: The domain name of the endpoint
+
+- **AcmCertificateArn**: The certificate arn for the domain name provided
+
+- **AuthenticationType**: Authentication type for the MCP server
+
+- **OAuthIssuerUrl**: The issuer URL for OAuth authentication
+
+- **OAuthAuthorizationUrl**: The authorization URL for OAuth authentication
+
+- **OAuthTokenUrl**: The token URL for OAuth authentication
+
+- **OAuthRevocationUrl**: The revocation URL for OAuth authentication
+
+- **OAuthRedirectUris**: The redirect URIs for OAuth authentication
+
+## Outputs
+
+- **ServerEndpoint**: The MCP server endpoint
 
 ## Development
 
@@ -126,7 +180,7 @@ The content must be in valid JSON format and have the properties:
 - inputSchema.json: [JSON schema](https://json-schema.org/)
 - content: Prompt template content
 
-The content template will be elaborate with [pug](https://pugjs.org/api/getting-started.html) with input data interpolation.
+The content template will be elaborate with [ejs](https://ejs.co/) with input data interpolation.
 
 It can be declared in a SAM template as:
 ```yaml
@@ -150,7 +204,7 @@ EchoPromptParameter:
             "required": ["message"]
           }
         },
-        "content": "Execute the tool 'echo' with the message '#{message}'"
+        "content": "Execute the tool 'echo' with the message '<%= message %>'"
       }
 ```
 
@@ -222,3 +276,8 @@ EchoToolFunction:
         }
       }
 ```
+
+## Credits
+
+- Repository badges by [Shields.io](https://shields.io/)
+- Infrastructure schema by [Cloudcraft](https://www.cloudcraft.co/)

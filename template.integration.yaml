@@ -61,7 +61,7 @@ Resources:
               "required": ["message"]
             }
           },
-          "content": "Execute the tool 'echo' with the message '#{message}'"
+          "content": "Execute the tool 'echo' with the message '<%= message %>'"
         }
 
   ##
