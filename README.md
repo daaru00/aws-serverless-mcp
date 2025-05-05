@@ -42,6 +42,8 @@ This application need some parameters when you deploy it:
 
 - **AuthenticationType**: Authentication type for the MCP server
 
+- **AuthenticationToken**: The authentication token for the MCP server
+
 - **OAuthIssuerUrl**: The issuer URL for OAuth authentication
 
 - **OAuthAuthorizationUrl**: The authorization URL for OAuth authentication

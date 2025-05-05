@@ -5,14 +5,17 @@ import { ProxyOAuthServerProvider } from '@modelcontextprotocol/sdk/server/auth/
 import getServer from './mcp.mjs'
 
 const AUTHENTICATION_TYPE = process.env.AUTHENTICATION_TYPE || 'DISABLED'
+const AUTHENTICATION_TOKEN = process.env.AUTHENTICATION_TOKEN || ''
 
 // Initialize Express app
 const app = express()
 app.use(express.json())
+app.disable('x-powered-by')
 
-// Log all requests
+// Global middleware
 app.use((req, res, next) => {
-	console.log(`${req.method} ${req.url}`)
+	res.contentType('application/json')
+	console.debug(`${req.method} ${req.url}`, req.body ? JSON.stringify(req.body, null, 2) : '')
 	next()
 })
 
@@ -27,7 +30,7 @@ const auth = async (req, res, next) => {
 
 	res.locals.token = (req.headers['authorization'] || req.headers['Authorization'] || '').replace('Bearer ').trim()
 	if (AUTHENTICATION_TYPE === 'TOKEN_REQUIRED' && !res.locals.token) {
-		console.error('Missing or invalid authorization token')
+		console.error('Missing authorization token')
 		return res.writeHead(403).end(JSON.stringify({
 			jsonrpc: '2.0',
 			error: {
@@ -37,7 +40,7 @@ const auth = async (req, res, next) => {
 			id: null,
 		}))
 	} else if (AUTHENTICATION_TYPE === 'OAUTH' && !res.locals.token) {
-		console.error('Missing or invalid authorization token, requesting login..')
+		console.error('Missing authorization token, requesting login..')
 		return res.writeHead(401).end(JSON.stringify({
 			jsonrpc: '2.0',
 			error: {
@@ -47,10 +50,23 @@ const auth = async (req, res, next) => {
 			id: null,
 		}))
 	}
+
+	if (AUTHENTICATION_TYPE === 'TOKEN_REQUIRED' && AUTHENTICATION_TOKEN && res.locals.token !== AUTHENTICATION_TOKEN) {
+		console.error('Invalid authorization token')
+		return res.writeHead(403).end(JSON.stringify({
+			jsonrpc: '2.0',
+			error: {
+				code: -32600,
+				message: 'Forbidden',
+			},
+			id: null,
+		}))
+	}
   
 	next()
 }
 
+// Work in progress
 if (AUTHENTICATION_TYPE === 'OAUTH') {
 	console.log('Initializing OAuth2 authentication (WIP)')
 	const proxyProvider = new ProxyOAuthServerProvider({
@@ -83,8 +99,6 @@ if (AUTHENTICATION_TYPE === 'OAUTH') {
 }
 
 app.post('/mcp', auth, async (req, res) => {
-	console.log('Received POST MCP request')
-
 	try {
 		const server = await getServer(res.locals)
 		const transport = new StreamableHTTPServerTransport({
@@ -92,7 +106,6 @@ app.post('/mcp', auth, async (req, res) => {
 			enableJsonResponse: true
 		})
 		res.on('close', () => {
-			console.log('Request closed')
 			transport.close()
 			server.close()
 		})
@@ -105,7 +118,7 @@ app.post('/mcp', auth, async (req, res) => {
 				jsonrpc: '2.0',
 				error: {
 					code: -32603,
-					message: 'Internal server error',
+					message: 'Internal Server Error',
 				},
 				id: null,
 			})
@@ -114,24 +127,22 @@ app.post('/mcp', auth, async (req, res) => {
 })
 
 app.get('/mcp', async (req, res) => {
-	console.log('Received GET MCP request')
 	res.writeHead(405).end(JSON.stringify({
 		jsonrpc: '2.0',
 		error: {
 			code: -32000,
-			message: 'Method not allowed.'
+			message: 'Method Not Allowed'
 		},
 		id: null
 	}))
 })
 
 app.delete('/mcp', async (req, res) => {
-	console.log('Received DELETE MCP request')
 	res.writeHead(405).end(JSON.stringify({
 		jsonrpc: '2.0',
 		error: {
 			code: -32000,
-			message: 'Method not allowed.'
+			message: 'Method Not Allowed'
 		},
 		id: null
 	}))
