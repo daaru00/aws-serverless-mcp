@@ -15,7 +15,7 @@
 		"@aws-sdk/lib-dynamodb": "^3.797.0",
 		"@codegenie/serverless-express": "^4.16.0",
 		"@modelcontextprotocol/inspector": "^0.11.0",
-		"@modelcontextprotocol/sdk": "^1.10.2",
+		"@modelcontextprotocol/sdk": "^1.32.2",
 		"aws-xray-sdk": "^3.10.3",
 		"dotenv": "^16.5.0",
 		"ejs": "^3.1.10",

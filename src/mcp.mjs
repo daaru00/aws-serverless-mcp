@@ -15,7 +15,9 @@ export default async function (context = {}) {
 		version: process.env.SERVER_VERSION || '0.1.0',
 	}, {
 		capabilities: {
-			tools: {}
+			tools: {},
+			resources: {},
+			prompts: {}
 		},
 		instructions: process.env.INSTRUCTIONS,
 	})
@@ -24,9 +26,11 @@ export default async function (context = {}) {
 
 	const resources = await listResources(parameters)
 	for (const resource of resources) {
-		server.resource(
+		console.log(`Registering resource: ${resource.name}`)
+		server.registerResource(
 			resource.name,
 			resource.uri,
+			{},
 			async (uri) => ({
 				contents: [{
 					uri: uri.href,
@@ -38,7 +42,7 @@ export default async function (context = {}) {
   
 	const prompts = await listPrompts(parameters)
 	for (const prompt of prompts) {
-		server.prompt(
+		server.registerPrompt(
 			prompt.name,
 			prompt.description,
 			prompt.inputSchema ? jsonSchemaObjectToZodRawShape(prompt.inputSchema) : {},
@@ -56,10 +60,12 @@ export default async function (context = {}) {
 
 	const tools = await listTools(parameters)
 	for (const tool of tools) {
-		server.tool(
+		server.registerTool(
 			tool.name,
-			tool.description,
-			tool.inputSchema ? jsonSchemaObjectToZodRawShape(tool.inputSchema) : {},
+			{
+				description: tool.description,
+				inputSchema: tool.inputSchema ? jsonSchemaObjectToZodRawShape(tool.inputSchema) : {}
+			},
 			async (input) => await invokeTool(tool.name, input, context)
 		)
 	}
